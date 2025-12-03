@@ -1,5 +1,5 @@
 const sql = require('../config/supabase');
-const phonePeService = require('../services/phonePeService');
+// const phonePeService = require('../services/phonePeService');
 
 exports.getAllPayments = async (req, res) => {
   try {
