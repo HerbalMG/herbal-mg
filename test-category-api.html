@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Category API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .category-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .category-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .category-card img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+        .category-card h3 {
+            margin: 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .category-card .slug {
+            color: #666;
+            font-size: 12px;
+            font-style: italic;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Category API Test</h1>
+        
+        <div>
+            <button onclick="testAPI()">Test API</button>
+            <button onclick="showRawData()">Show Raw JSON</button>
+        </div>
+
+        <div id="status" class="status loading">
+            Click "Test API" to check if categories are loading...
+        </div>
+
+        <div id="raw-data" style="display: none;">
+            <h3>Raw API Response:</h3>
+            <pre id="json-output"></pre>
+        </div>
+
+        <div id="categories" class="categories-grid"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api/category';
+        let cachedData = null;
+
+        async function testAPI() {
+            const statusDiv = document.getElementById('status');
+            const categoriesDiv = document.getElementById('categories');
+            
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '⏳ Loading categories from API...';
+            categoriesDiv.innerHTML = '';
+
+            try {
+                const response = await fetch(API_URL);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                cachedData = data;
+                
+                if (!Array.isArray(data)) {
+                    throw new Error('API did not return an array');
+                }
+
+                if (data.length === 0) {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '⚠️ API returned empty array. Run: npm run seed:categories';
+                    return;
+                }
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ Success! Loaded ${data.length} categories from backend`;
+
+                // Display categories
+                data.forEach(category => {
+                    const card = document.createElement('div');
+                    card.className = 'category-card';
+                    
+                    const img = document.createElement('img');
+                    img.src = category.image_url || '/assets/default-category.svg';
+                    img.alt = category.name;
+                    img.onerror = function() {
+                        this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%23ddd"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="24">?</text></svg>';
+                    };
+                    
+                    const title = document.createElement('h3');
+                    title.textContent = category.name;
+                    
+                    const slug = document.createElement('div');
+                    slug.className = 'slug';
+                    slug.textContent = category.slug;
+                    
+                    card.appendChild(img);
+                    card.appendChild(title);
+                    card.appendChild(slug);
+                    categoriesDiv.appendChild(card);
+                });
+
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    ❌ Error: ${error.message}<br><br>
+                    <strong>Troubleshooting:</strong><br>
+                    1. Is backend running? Check: <code>curl ${API_URL}</code><br>
+                    2. Is database seeded? Run: <code>npm run seed:categories</code><br>
+                    3. Check CORS settings in backend<br>
+                    4. Check browser console for details
+                `;
+                console.error('API Test Error:', error);
+            }
+        }
+
+        function showRawData() {
+            const rawDiv = document.getElementById('raw-data');
+            const jsonOutput = document.getElementById('json-output');
+            
+            if (!cachedData) {
+                alert('Please run "Test API" first');
+                return;
+            }
+
+            rawDiv.style.display = rawDiv.style.display === 'none' ? 'block' : 'none';
+            jsonOutput.textContent = JSON.stringify(cachedData, null, 2);
+        }
+
+        // Auto-run test on page load
+        window.addEventListener('load', testAPI);
+    </script>
+</body>
+</html>
