@@ -1,7 +1,9 @@
 import { Router } from "express";
 const router = Router();
 import multer, { memoryStorage } from "multer";
-import { upload as _upload, listFiles, deleteFile } from "../config/imagekit";
+// import { upload as _upload, listFiles, deleteFile } from "../config/imagekit";  
+import { upload as _upload, listFiles, deleteFile } from "../config/imagekit.js";
+
 import extractImageKitFileId from "../utils/extractImageKitFileId.js";
 
 const fetch = (...args) =>
