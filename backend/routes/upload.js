@@ -2,6 +2,8 @@ import { Router } from "express";
 const router = Router();
 import multer, { memoryStorage } from "multer";
 import { upload as _upload, listFiles, deleteFile } from "../config/imagekit";
+import extractImageKitFileId from "../utils/extractImageKitFileId.js";
+
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 import { load } from "cheerio";
@@ -165,7 +167,7 @@ router.post("/delete", async (req, res) => {
   }
 
   try {
-    const extractImageKitFileId = require("../utils/extractImageKitFileId");
+    // const extractImageKitFileId = require("../utils/extractImageKitFileId");
     const filePath = extractImageKitFileId(imageUrl);
 
     if (!filePath) {
