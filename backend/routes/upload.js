@@ -1,13 +1,13 @@
-const express = require("express");
-const router = express.Router();
-const multer = require("multer");
-const imagekit = require("../config/imagekit");
+import { Router } from "express";
+const router = Router();
+import multer, { memoryStorage } from "multer";
+import { upload as _upload, listFiles, deleteFile } from "../config/imagekit";
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
-const cheerio = require("cheerio");
+import { load } from "cheerio";
 
 // Multer storage (in-memory)
-const storage = multer.memoryStorage();
+const storage = memoryStorage();
 const upload = multer({ storage });
 
 // Upload image with organized folders
@@ -42,7 +42,7 @@ router.post("/upload", upload.single("image"), async (req, res) => {
     const originalName = req.file.originalname || "upload";
     const fileName = `${folderType}_${timestamp}_${originalName}`;
 
-    const result = await imagekit.upload({
+    const result = await _upload({
       file: req.file.buffer,
       fileName: fileName,
       folder: folder,
@@ -70,7 +70,7 @@ router.post("/fetchUrl", async (req, res) => {
   try {
     const response = await fetch(url);
     const html = await response.text();
-    const $ = cheerio.load(html);
+    const $ = load(html);
     const getMeta = (name) =>
       $(`meta[name='${name}']`).attr("content") ||
       $(`meta[property='og:${name}']`).attr("content") ||
@@ -120,14 +120,14 @@ router.get("/images", async (req, res) => {
 
     if (folderType && folderMap[folderType]) {
       // Get images from specific folder
-      result = await imagekit.listFiles({
+      result = await listFiles({
         path: folderMap[folderType],
         sort: "DESC_CREATED",
         limit: limit,
       });
     } else {
       // Get all images
-      result = await imagekit.listFiles({
+      result = await listFiles({
         sort: "DESC_CREATED",
         limit: limit,
       });
@@ -150,7 +150,7 @@ router.get("/images", async (req, res) => {
 router.delete("/delete/:fileId", async (req, res) => {
   const fileId = req.params.fileId; // gets everything after /delete/
   try {
-    const result = await imagekit.deleteFile(fileId);
+    const result = await deleteFile(fileId);
     res.json({ message: "Deleted", result });
   } catch (err) {
     res.status(500).json({ error: "Delete failed", details: err });
@@ -173,13 +173,13 @@ router.post("/delete", async (req, res) => {
     }
 
     // List files to find the file by path
-    const files = await imagekit.listFiles({
+    const files = await listFiles({
       path: "/" + filePath.split("/").slice(0, -1).join("/"),
       searchQuery: `name="${filePath.split("/").pop().split(".")[0]}"`,
     });
 
     if (files.length > 0) {
-      const result = await imagekit.deleteFile(files[0].fileId);
+      const result = await deleteFile(files[0].fileId);
       res.json({ message: "Deleted", result });
     } else {
       res.status(404).json({ error: "File not found" });
@@ -190,4 +190,4 @@ router.post("/delete", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

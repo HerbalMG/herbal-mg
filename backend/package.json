@@ -1,6 +1,7 @@
 {
   "name": "herbal-backend",
   "version": "1.0.0",
+  "type":"module",
   "description": "Backend for 2FA SMS login system",
   "main": "server.js",
   "scripts": {
